@@ -1,4 +1,3 @@
-# EcoWatts - Simulador de Consumo Energético Inteligente ⚡
 
 **EcoWatts** es una plataforma web moderna diseñada para ayudar a los usuarios a visualizar, analizar y optimizar el consumo eléctrico de su hogar. A través de simulaciones precisas y análisis de datos, permite tomar decisiones informadas para reducir tanto el impacto ambiental como el costo de la factura eléctrica.
 
