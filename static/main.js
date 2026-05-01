@@ -11,7 +11,7 @@ const COLORS = {
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar lluvia de rayos
     iniciarLluviaRayos();
-    
+
     // Inicializar scroll reveal
     revealOnScroll();
     window.addEventListener('scroll', revealOnScroll);
@@ -27,7 +27,7 @@ function iniciarLluviaRayos() {
     setInterval(() => {
         const bolt = document.createElement('i');
         bolt.className = 'fas fa-bolt falling-bolt';
-        
+
         // Posición horizontal aleatoria
         const posX = Math.random() * 100;
         // Tamaño aleatorio sutil
@@ -87,7 +87,7 @@ function cargarAparatos() {
 function renderizarAparatos(aparatos) {
     const contenedor = document.getElementById('lista-aparatos');
     if (!contenedor) return;
-    
+
     if (aparatos.length === 0) {
         contenedor.innerHTML = `
             <div class="empty-state">
@@ -97,7 +97,7 @@ function renderizarAparatos(aparatos) {
         `;
         return;
     }
-    
+
     contenedor.innerHTML = aparatos.map((aparato, idx) => `
         <div class="aparato-item" style="animation: fadeIn 0.5s ease forwards ${idx * 0.1}s; opacity: 0;">
             <div class="aparato-header">
@@ -129,31 +129,31 @@ function agregarAparato() {
     const nombre = document.getElementById('nombre-aparato').value.trim();
     const potencia = parseFloat(document.getElementById('potencia-aparato').value);
     const horas = parseFloat(document.getElementById('horas-aparato').value);
-    
+
     if (!nombre || !potencia || !horas || potencia <= 0 || horas <= 0) {
         mostrarNotificacion('Por favor completa todos los campos correctamente', 'error');
         return;
     }
-    
+
     fetch('/api/aparatos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, potencia_w: potencia, horas_dia: horas })
     })
-    .then(r => r.json())
-    .then(data => {
-        mostrarNotificacion(data.mensaje, 'success');
-        document.getElementById('nombre-aparato').value = '';
-        document.getElementById('potencia-aparato').value = '';
-        document.getElementById('horas-aparato').value = '';
-        cargarAparatos();
-    })
-    .catch(e => mostrarNotificacion('Error al agregar aparato', 'error'));
+        .then(r => r.json())
+        .then(data => {
+            mostrarNotificacion(data.mensaje, 'success');
+            document.getElementById('nombre-aparato').value = '';
+            document.getElementById('potencia-aparato').value = '';
+            document.getElementById('horas-aparato').value = '';
+            cargarAparatos();
+        })
+        .catch(e => mostrarNotificacion('Error al agregar aparato', 'error'));
 }
 
 function eliminarAparato(id) {
     if (!confirm('¿Seguro que deseas eliminar este dispositivo?')) return;
-    
+
     fetch(`/api/aparatos/${id}`, { method: 'DELETE' })
         .then(r => r.json())
         .then(data => {
@@ -166,7 +166,7 @@ function eliminarAparato(id) {
 function editarAparato(id) {
     const items = document.querySelectorAll('.aparato-item');
     const nombreActual = items[id].querySelector('.aparato-nombre').textContent;
-    
+
     const nombre = prompt('Nombre del aparato:', nombreActual);
     if (nombre === null) return;
 
@@ -188,12 +188,12 @@ function editarAparato(id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, potencia_w: potencia, horas_dia: horas })
     })
-    .then(r => r.json())
-    .then(data => {
-        mostrarNotificacion(data.mensaje, 'success');
-        cargarAparatos();
-    })
-    .catch(() => mostrarNotificacion('Error al editar aparato', 'error'));
+        .then(r => r.json())
+        .then(data => {
+            mostrarNotificacion(data.mensaje, 'success');
+            cargarAparatos();
+        })
+        .catch(() => mostrarNotificacion('Error al editar aparato', 'error'));
 }
 
 function cargarEjemplo() {
@@ -237,11 +237,11 @@ function renderizarConsumo(data) {
     const container = document.getElementById('consumo-results');
     if (!container) return;
     container.style.display = 'block';
-    
+
     document.getElementById('kpi-diario').textContent = data.total_diario_kwh.toFixed(2);
     document.getElementById('kpi-mensual').textContent = data.total_mensual_kwh.toFixed(2);
     document.getElementById('kpi-costo').textContent = '$' + data.costo_mensual_clp.toLocaleString('es-CL');
-    
+
     const tbody = document.getElementById('tabla-consumo-body');
     tbody.innerHTML = data.aparatos.map(aparato => `
         <tr>
@@ -250,10 +250,10 @@ function renderizarConsumo(data) {
             <td>${aparato.horas_dia.toFixed(1)} h</td>
             <td>${aparato.kwh_dia.toFixed(3)}</td>
             <td style="color: var(--primary); font-weight: 600;">${aparato.kwh_mes.toFixed(2)}</td>
-            <td style="font-weight: 700;">$${aparato.costo_mes.toLocaleString('es-CL', {maximumFractionDigits: 0})}</td>
+            <td style="font-weight: 700;">$${aparato.costo_mes.toLocaleString('es-CL', { maximumFractionDigits: 0 })}</td>
         </tr>
     `).join('');
-    
+
     generarGrafico(data.aparatos);
     cargarTopConsumidores();
 }
@@ -262,9 +262,9 @@ function generarGrafico(aparatos) {
     const canvas = document.getElementById('grafico-consumo');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+
     if (graficoInstance) graficoInstance.destroy();
-    
+
     graficoInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -316,26 +316,26 @@ function cargarTopConsumidores() {
 
 function simularReduccion() {
     const porcentaje = document.getElementById('porcentaje-reduccion').value;
-    
+
     fetch('/api/simulacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ porcentaje_reduccion: parseFloat(porcentaje) })
     })
-    .then(r => r.json())
-    .then(data => renderizarSimulacion(data))
-    .catch(e => mostrarNotificacion('Error en simulación', 'error'));
+        .then(r => r.json())
+        .then(data => renderizarSimulacion(data))
+        .catch(e => mostrarNotificacion('Error en simulación', 'error'));
 }
 
 function renderizarSimulacion(data) {
     const container = document.getElementById('simulacion-results');
     if (!container) return;
     container.style.display = 'block';
-    
+
     document.getElementById('sim-original').textContent = data.consumo_original.toFixed(1);
     document.getElementById('sim-nuevo').textContent = data.consumo_nuevo.toFixed(1);
     document.getElementById('sim-ahorro-kwh').textContent = data.ahorro_kwh.toFixed(1);
-    document.getElementById('sim-ahorro-dinero').textContent = '$' + data.ahorro_dinero.toLocaleString('es-CL', {maximumFractionDigits: 0});
+    document.getElementById('sim-ahorro-dinero').textContent = '$' + data.ahorro_dinero.toLocaleString('es-CL', { maximumFractionDigits: 0 });
     document.getElementById('sim-ahorro-porc').textContent = data.ahorro_porcentual.toFixed(1);
 }
 
@@ -351,7 +351,7 @@ function cargarRecomendaciones() {
 function renderizarRecomendaciones(recomendaciones) {
     const contenedor = document.getElementById('recomendaciones-container');
     if (!contenedor) return;
-    
+
     contenedor.style.display = 'grid';
     contenedor.innerHTML = recomendaciones.map((rec, idx) => `
         <div class="recommendation-card" style="animation: slideInRight 0.5s ease forwards ${idx * 0.1}s; opacity: 0;">
@@ -367,7 +367,7 @@ function renderizarRecomendaciones(recomendaciones) {
                     </div>
                     <div>
                         <small style="color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600; font-size: 0.7rem;">Ahorro Mensual</small>
-                        <span style="font-weight: 700; color: var(--accent);">$${rec.ahorro_dinero.toLocaleString('es-CL', {maximumFractionDigits: 0})}</span>
+                        <span style="font-weight: 700; color: var(--accent);">$${rec.ahorro_dinero.toLocaleString('es-CL', { maximumFractionDigits: 0 })}</span>
                     </div>
                 </div>
             </div>
@@ -401,3 +401,26 @@ style.textContent = `
     @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 `;
 document.head.appendChild(style);
+// ============ MODO OSCURO (Deep Black) ============
+const themeToggle = document.getElementById('theme-toggle');
+const body = document.body;
+
+// Cargar preferencia guardada
+if (localStorage.getItem('theme') === 'dark') {
+    body.classList.add('dark-mode');
+    if (themeToggle) themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+}
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        
+        if (body.classList.contains('dark-mode')) {
+            localStorage.setItem('theme', 'dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+    });
+}

@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EcoWatts - Simulador Energético{% endblock %}</title>
-    
+
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <!-- Lluvia de Rayos (Background Animation) -->
     <div id="bolt-rain" class="bolt-rain-container"></div>
@@ -30,11 +34,16 @@
             </div>
             <ul class="navbar-menu">
                 {% if current_user.is_authenticated %}
-                <li><a href="{{ url_for('inicio') }}" class="nav-link {% if request.path == '/' %}active{% endif %}">Inicio</a></li>
-                <li><a href="{{ url_for('aparatos_page') }}" class="nav-link {% if request.path == '/aparatos' %}active{% endif %}">Aparatos</a></li>
-                <li><a href="{{ url_for('analisis_page') }}" class="nav-link {% if request.path == '/analisis' %}active{% endif %}">Análisis</a></li>
-                <li><a href="{{ url_for('simulacion_page') }}" class="nav-link {% if request.path == '/simulacion' %}active{% endif %}">Simulación</a></li>
-                <li><a href="{{ url_for('recomendaciones_page') }}" class="nav-link {% if request.path == '/recomendaciones' %}active{% endif %}">Consejos</a></li>
+                <li><a href="{{ url_for('inicio') }}"
+                        class="nav-link {% if request.path == '/' %}active{% endif %}">Inicio</a></li>
+                <li><a href="{{ url_for('aparatos_page') }}"
+                        class="nav-link {% if request.path == '/aparatos' %}active{% endif %}">Aparatos</a></li>
+                <li><a href="{{ url_for('analisis_page') }}"
+                        class="nav-link {% if request.path == '/analisis' %}active{% endif %}">Análisis</a></li>
+                <li><a href="{{ url_for('simulacion_page') }}"
+                        class="nav-link {% if request.path == '/simulacion' %}active{% endif %}">Simulación</a></li>
+                <li><a href="{{ url_for('recomendaciones_page') }}"
+                        class="nav-link {% if request.path == '/recomendaciones' %}active{% endif %}">Consejos</a></li>
                 {% endif %}
             </ul>
             <div class="navbar-actions">
@@ -78,4 +87,5 @@
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>
