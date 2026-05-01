@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Iniciar Sesión - EcoWatts{% endblock %}
 
@@ -16,9 +16,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="notification show {{ category }}" style="position: static; transform: none; margin-bottom: 1.5rem; width: 100%;">
-                {{ message }}
-              </div>
+              <div class="notification-inline {{ category }}"><i class="fas fa-info-circle"></i> {{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}

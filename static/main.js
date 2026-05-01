@@ -1,7 +1,7 @@
-// Variables globales
+﻿// Variables globales
 let graficoInstance = null;
 
-// Configuración de colores para gráficos
+// ConfiguraciÃƒÂ³n de colores para grÃƒÂ¡ficos
 const COLORS = {
     primary: '#0ea5e9',
     chart: ['#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#0369a1', '#0c4a6e', '#bae6fd', '#e0f2fe']
@@ -17,24 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', revealOnScroll);
 });
 
-// ============ FUNCIONES DE ANIMACIÓN (LLUVIA) ============
+// ============ FUNCIONES DE ANIMACIÃƒâ€œN (LLUVIA) ============
 
 function iniciarLluviaRayos() {
     const container = document.getElementById('bolt-rain');
     if (!container) return;
 
-    // Crear un rayo cada 100ms para una lluvia mucho más intensa
+    // Crear un rayo cada 100ms para una lluvia mucho mÃƒÂ¡s intensa
     setInterval(() => {
         const bolt = document.createElement('i');
         bolt.className = 'fas fa-bolt falling-bolt';
 
-        // Posición horizontal aleatoria
         const posX = Math.random() * 100;
-        // Tamaño aleatorio sutil
         const size = 0.5 + Math.random() * 1.5;
-        // Duración aleatoria para que no caigan todos igual
-        const duration = 3 + Math.random() * 4;
-        // Delay aleatorio
+        const duration = 2 + Math.random() * 3; // MÃ¡s rÃ¡pidos
         const delay = Math.random() * 2;
 
         bolt.style.left = posX + 'vw';
@@ -44,11 +40,10 @@ function iniciarLluviaRayos() {
 
         container.appendChild(bolt);
 
-        // Limpiar el elemento después de que termine la animación (8s max)
         setTimeout(() => {
             bolt.remove();
-        }, 8000);
-    }, 400);
+        }, 5000);
+    }, 150);
 }
 
 // ============ FUNCIONES DE RESUMEN (HOME) ============
@@ -92,7 +87,7 @@ function renderizarAparatos(aparatos) {
         contenedor.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-microchip"></i>
-                <p>No has añadido ningún aparato todavía.</p>
+                <p>No has aÃƒÂ±adido ningÃƒÂºn aparato todavÃƒÂ­a.</p>
             </div>
         `;
         return;
@@ -103,10 +98,10 @@ function renderizarAparatos(aparatos) {
             <div class="aparato-header">
                 <span class="aparato-nombre">${aparato.nombre}</span>
                 <div class="aparato-actions">
-                    <button onclick="editarAparato(${idx})" class="btn-icon btn-edit" title="Editar">
+                    <button onclick="editarAparato(${aparato.id})" class="btn-icon btn-edit" title="Editar">
                         <i class="fas fa-pencil-alt"></i>
                     </button>
-                    <button onclick="eliminarAparato(${idx})" class="btn-icon btn-delete" title="Eliminar">
+                    <button onclick="eliminarAparato(${aparato.id})" class="btn-icon btn-delete" title="Eliminar">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -151,8 +146,9 @@ function agregarAparato() {
         .catch(e => mostrarNotificacion('Error al agregar aparato', 'error'));
 }
 
-function eliminarAparato(id) {
-    if (!confirm('¿Seguro que deseas eliminar este dispositivo?')) return;
+async function eliminarAparato(id) {
+    const confirmacion = await customConfirm('Â¿Seguro que deseas eliminar este dispositivo?');
+    if (!confirmacion) return;
 
     fetch(`/api/aparatos/${id}`, { method: 'DELETE' })
         .then(r => r.json())
@@ -163,23 +159,26 @@ function eliminarAparato(id) {
         .catch(e => mostrarNotificacion('Error al eliminar', 'error'));
 }
 
-function editarAparato(id) {
-    const items = document.querySelectorAll('.aparato-item');
-    const nombreActual = items[id].querySelector('.aparato-nombre').textContent;
+async function editarAparato(id) {
+    // Buscar el nombre actual desde la lista global de aparatos guardada en el estado o desde el DOM
+    // Para simplificar, buscaremos el elemento que contiene el botÃ³n presionado
+    const btn = event.currentTarget;
+    const card = btn.closest('.aparato-item');
+    const nombreActual = card.querySelector('.aparato-nombre').textContent;
 
-    const nombre = prompt('Nombre del aparato:', nombreActual);
-    if (nombre === null) return;
+    const nombre = await customPrompt('Nombre del aparato:', nombreActual);
+    if (nombre === null || nombre.trim() === '') return;
 
-    const potenciaStr = prompt('Potencia (watts):', '');
+    const potenciaStr = await customPrompt('Potencia (watts):', '');
     if (potenciaStr === null) return;
     const potencia = parseFloat(potenciaStr);
 
-    const horasStr = prompt('Horas diarias:', '');
+    const horasStr = await customPrompt('Horas diarias:', '');
     if (horasStr === null) return;
     const horas = parseFloat(horasStr);
 
-    if (!nombre || isNaN(potencia) || isNaN(horas) || potencia <= 0 || horas <= 0) {
-        mostrarNotificacion('Datos inválidos para la edición', 'error');
+    if (isNaN(potencia) || isNaN(horas) || potencia <= 0 || horas <= 0) {
+        mostrarNotificacion('Datos invÃ¡lidos para la ediciÃ³n', 'error');
         return;
     }
 
@@ -200,8 +199,8 @@ function cargarEjemplo() {
     fetch('/api/cargar-ejemplo', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
-            mostrarNotificacion('Datos de ejemplo cargados con éxito', 'success');
-            // Recargar página si estamos en una sección que depende de datos
+            mostrarNotificacion('Datos de ejemplo cargados con ÃƒÂ©xito', 'success');
+            // Recargar pÃƒÂ¡gina si estamos en una secciÃƒÂ³n que depende de datos
             if (window.location.pathname === '/aparatos' || window.location.pathname === '/') {
                 location.reload();
             }
@@ -324,7 +323,7 @@ function simularReduccion() {
     })
         .then(r => r.json())
         .then(data => renderizarSimulacion(data))
-        .catch(e => mostrarNotificacion('Error en simulación', 'error'));
+        .catch(e => mostrarNotificacion('Error en simulaciÃƒÂ³n', 'error'));
 }
 
 function renderizarSimulacion(data) {
@@ -363,7 +362,7 @@ function renderizarRecomendaciones(recomendaciones) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <small style="color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600; font-size: 0.7rem;">Meta de Uso</small>
-                        <span style="font-weight: 700; color: var(--info);">${rec.horas_recomendada.toFixed(1)}h / día</span>
+                        <span style="font-weight: 700; color: var(--info);">${rec.horas_recomendada.toFixed(1)}h / dÃƒÂ­a</span>
                     </div>
                     <div>
                         <small style="color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600; font-size: 0.7rem;">Ahorro Mensual</small>
@@ -377,12 +376,24 @@ function renderizarRecomendaciones(recomendaciones) {
 
 // ============ FUNCIONES AUXILIARES ============
 
-function mostrarNotificacion(mensaje, tipo) {
+function mostrarNotificacion(mensaje, tipo = 'success') {
     const notif = document.getElementById('notification');
     if (!notif) return;
-    notif.textContent = mensaje;
-    notif.className = 'notification ' + (tipo || 'success') + ' show';
-    setTimeout(() => notif.classList.remove('show'), 4000);
+
+    const icon = tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    
+    notif.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <div class="notif-content">
+            <span style="font-weight: 600;">${mensaje}</span>
+        </div>
+    `;
+    
+    notif.className = 'notification ' + tipo + ' show';
+    
+    setTimeout(() => {
+        notif.classList.remove('show');
+    }, 4000);
 }
 
 function revealOnScroll() {
@@ -424,3 +435,84 @@ if (themeToggle) {
         }
     });
 }
+
+// ============ SISTEMA DE MODALES PERSONALIZADOS ============
+
+/**
+ * Muestra un modal personalizado que devuelve una Promesa.
+ * @param {Object} options { title, message, isPrompt, defaultValue, icon }
+ */
+function showCustomModal({ title, message, isPrompt = false, defaultValue = '', icon = 'fa-info-circle' }) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-modal');
+        const titleEl = document.getElementById('modal-title');
+        const messageEl = document.getElementById('modal-message');
+        const iconEl = document.getElementById('modal-icon');
+        const inputContainer = document.getElementById('modal-input-container');
+        const inputEl = document.getElementById('modal-input');
+        const btnConfirm = document.getElementById('modal-btn-confirm');
+        const btnCancel = document.getElementById('modal-btn-cancel');
+
+        // Configurar contenido
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        iconEl.className = 'fas ' + icon;
+        
+        if (isPrompt) {
+            inputContainer.style.display = 'block';
+            inputEl.value = defaultValue;
+            setTimeout(() => inputEl.focus(), 50);
+        } else {
+            inputContainer.style.display = 'none';
+        }
+
+        // Mostrar modal
+        modal.classList.add('show');
+
+        // Handlers
+        const onConfirm = () => {
+            const value = isPrompt ? inputEl.value : true;
+            cleanup();
+            resolve(value);
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const cleanup = () => {
+            modal.classList.remove('show');
+            btnConfirm.removeEventListener('click', onConfirm);
+            btnCancel.removeEventListener('click', onCancel);
+        };
+
+        btnConfirm.addEventListener('click', onConfirm);
+        btnCancel.addEventListener('click', onCancel);
+        
+        // Cerrar al hacer clic fuera
+        modal.onclick = (e) => {
+            if (e.target === modal) onCancel();
+        };
+    });
+}
+
+// Helpers para reemplazar native methods
+async function customConfirm(mensaje) {
+    return await showCustomModal({
+        title: 'ConfirmaciÃ³n',
+        message: mensaje,
+        icon: 'fa-exclamation-triangle'
+    });
+}
+
+async function customPrompt(titulo, placeholder = '') {
+    return await showCustomModal({
+        title: titulo,
+        message: 'Por favor ingrese el dato solicitado:',
+        isPrompt: true,
+        defaultValue: placeholder,
+        icon: 'fa-edit'
+    });
+}
+

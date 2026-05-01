@@ -83,6 +83,26 @@
         </div>
     </footer>
 
+    <!-- Custom Modal System -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <i id="modal-icon" class="fas fa-info-circle"></i>
+                <h3 id="modal-title">Título</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Mensaje de confirmación aquí.</p>
+                <div id="modal-input-container" style="display: none;">
+                    <input type="text" id="modal-input" class="modal-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-btn-cancel" class="btn btn-secondary btn-sm">Cancelar</button>
+                <button id="modal-btn-confirm" class="btn btn-primary btn-sm">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     {% block scripts %}{% endblock %}
