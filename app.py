@@ -36,8 +36,28 @@ def obtener_top_consumidores(num_top):
 
 @app.route('/')
 def inicio():
-    """Pagina principal"""
+    """Pagina principal - Dashboard"""
     return render_template('dashboard.html')
+
+@app.route('/aparatos')
+def aparatos_page():
+    """Pagina de gestion de aparatos"""
+    return render_template('aparatos.html')
+
+@app.route('/analisis')
+def analisis_page():
+    """Pagina de analisis de consumo"""
+    return render_template('analisis.html')
+
+@app.route('/simulacion')
+def simulacion_page():
+    """Pagina de simulacion"""
+    return render_template('simulacion.html')
+
+@app.route('/recomendaciones')
+def recomendaciones_page():
+    """Pagina de recomendaciones"""
+    return render_template('recomendaciones.html')
 
 @app.route('/api/aparatos', methods=['GET'])
 def obtener_aparatos():

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2><i class="fas fa-lightbulb"></i> Recomendaciones Personalizadas</h2>
+        <p class="section-desc">Sugerencias basadas en tus patrones de consumo para reducir tu factura eléctrica.</p>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <button onclick="cargarRecomendaciones()" class="btn btn-primary btn-large">
+                <i class="fas fa-bolt"></i> Obtener Sugerencias de Optimización
+            </button>
+        </div>
+
+        <div id="recomendaciones-container" class="recommendations-list" style="display: none;">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Podríamos cargar automáticamente o esperar al botón
+    });
+</script>
+{% endblock %}

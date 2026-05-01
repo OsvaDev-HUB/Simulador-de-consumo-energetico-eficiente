@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2><i class="fas fa-vial"></i> Laboratorio de Simulación</h2>
+        
+        <div class="simulation-controls" style="max-width: 600px; margin: 0 auto 3rem;">
+            <p class="info-text" style="text-align: center; margin-bottom: 1.5rem; color: var(--text-muted);">
+                Ajusta el porcentaje de ahorro para ver el impacto económico potencial en los dispositivos de mayor consumo.
+            </p>
+
+            <div class="form-group" style="grid-template-columns: 1fr;">
+                <input type="range" id="porcentaje-reduccion" min="0" max="100" value="20" class="slider" style="width: 100%; margin: 1rem 0;">
+                <div class="slider-value" style="text-align: center; font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                    Reducción: <span id="valor-porcentaje">20</span>%
+                </div>
+            </div>
+
+            <button onclick="simularReduccion()" class="btn btn-primary btn-large">
+                <i class="fas fa-play"></i> Iniciar Simulación
+            </button>
+        </div>
+
+        <div id="simulacion-results" class="results-container" style="display: none;">
+            <div class="simulacion-comparison">
+                <div class="sim-box original">
+                    <div class="sim-title">Gasto Actual</div>
+                    <div class="sim-value" id="sim-original">0.00</div>
+                    <div class="sim-unit">kWh / Mes</div>
+                </div>
+                <div class="sim-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="sim-box simulado">
+                    <div class="sim-title">Nuevo Gasto</div>
+                    <div class="sim-value" id="sim-nuevo">0.00</div>
+                    <div class="sim-unit">kWh / Mes</div>
+                </div>
+            </div>
+
+            <div class="sim-beneficios">
+                <div class="beneficio-card">
+                    <i class="fas fa-leaf"></i>
+                    <div class="beneficio-label">Energía Ahorrada</div>
+                    <div class="beneficio-valor" id="sim-ahorro-kwh">0.00</div>
+                    <div class="beneficio-unit">kWh / Mes</div>
+                </div>
+                <div class="beneficio-card">
+                    <i class="fas fa-wallet"></i>
+                    <div class="beneficio-label">Ahorro Económico</div>
+                    <div class="beneficio-valor" id="sim-ahorro-dinero">$0</div>
+                    <div class="beneficio-unit">CLP / Mes</div>
+                </div>
+                <div class="beneficio-card" style="border-color: var(--accent);">
+                    <i class="fas fa-chart-line" style="color: var(--accent);"></i>
+                    <div class="beneficio-label">Eficiencia Lograda</div>
+                    <div class="beneficio-valor" id="sim-ahorro-porc" style="color: var(--accent);">0.00</div>
+                    <div class="beneficio-unit">%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const slider = document.getElementById('porcentaje-reduccion');
+        const valor = document.getElementById('valor-porcentaje');
+        if (slider && valor) {
+            slider.oninput = function() {
+                valor.innerHTML = this.value;
+            }
+        }
+    });
+</script>
+{% endblock %}

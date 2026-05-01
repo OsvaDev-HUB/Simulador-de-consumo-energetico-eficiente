@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2><i class="fas fa-chart-pie"></i> Análisis de Consumo</h2>
+        <p class="section-desc">Visualiza el impacto económico y energético de cada dispositivo.</p>
+        
+        <div class="action-bar" style="text-align: center; margin-bottom: 2rem;">
+            <button onclick="calcularConsumo()" class="btn btn-primary btn-large">
+                <i class="fas fa-sync-alt"></i> Procesar Datos y Generar Análisis
+            </button>
+        </div>
+
+        <div id="consumo-results" class="results-container" style="display: none;">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Consumo Diario</div>
+                    <div class="kpi-value" id="kpi-diario">0.00</div>
+                    <div class="kpi-unit">kWh</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Consumo Mensual</div>
+                    <div class="kpi-value" id="kpi-mensual">0.00</div>
+                    <div class="kpi-unit">kWh</div>
+                </div>
+                <div class="kpi-card highlight">
+                    <div class="kpi-label">Costo Mensual Est.</div>
+                    <div class="kpi-value" id="kpi-costo">$0.00</div>
+                    <div class="kpi-unit">CLP</div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="tabla-consumo" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Dispositivo</th>
+                            <th>Potencia</th>
+                            <th>Uso/Día</th>
+                            <th>kWh/Día</th>
+                            <th>kWh/Mes</th>
+                            <th>Costo/Mes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-consumo-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grafico-container">
+                <canvas id="grafico-consumo"></canvas>
+            </div>
+
+            <div class="top-consumidores">
+                <h3><i class="fas fa-fire"></i> Dispositivos de Alto Consumo</h3>
+                <div id="top-list" class="top-list">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Podríamos cargar automáticamente el análisis o esperar al botón
+        // calcularConsumo(); 
+    });
+</script>
+{% endblock %}

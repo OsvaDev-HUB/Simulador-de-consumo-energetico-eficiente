@@ -33,10 +33,11 @@
                 </div>
             </div>
             <ul class="navbar-menu">
-                <li><a href="/" class="nav-link active">Dashboard</a></li>
-                <li><a href="#aparatos" class="nav-link">Aparatos</a></li>
-                <li><a href="#consumo" class="nav-link">Análisis</a></li>
-                <li><a href="#simulacion" class="nav-link">Simulaciones</a></li>
+                <li><a href="{{ url_for('inicio') }}" class="nav-link {% if request.path == '/' %}active{% endif %}">Inicio</a></li>
+                <li><a href="{{ url_for('aparatos_page') }}" class="nav-link {% if request.path == '/aparatos' %}active{% endif %}">Aparatos</a></li>
+                <li><a href="{{ url_for('analisis_page') }}" class="nav-link {% if request.path == '/analisis' %}active{% endif %}">Análisis</a></li>
+                <li><a href="{{ url_for('simulacion_page') }}" class="nav-link {% if request.path == '/simulacion' %}active{% endif %}">Simulación</a></li>
+                <li><a href="{{ url_for('recomendaciones_page') }}" class="nav-link {% if request.path == '/recomendaciones' %}active{% endif %}">Consejos</a></li>
             </ul>
             <div class="navbar-actions">
                 <button class="btn btn-primary btn-sm" onclick="cargarEjemplo()">

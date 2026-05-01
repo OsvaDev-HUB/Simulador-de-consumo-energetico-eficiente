@@ -4,51 +4,38 @@ let graficoInstance = null;
 // Configuración de colores para gráficos
 const COLORS = {
     primary: '#0ea5e9',
-    primaryAlpha: 'rgba(14, 165, 233, 0.8)',
-    accent: '#22c55e',
-    accentAlpha: 'rgba(34, 197, 94, 0.8)',
-    danger: '#ef4444',
-    warning: '#f59e0b',
-    chart: [
-        '#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#0369a1',
-        '#0c4a6e', '#bae6fd', '#e0f2fe'
-    ]
+    chart: ['#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#0369a1', '#0c4a6e', '#bae6fd', '#e0f2fe']
 };
 
 // Cuando carga la pagina
 document.addEventListener('DOMContentLoaded', () => {
-    cargarAparatos();
-    
-    // Configurar botones de tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => cambiarTab(btn.dataset.tab, btn));
-    });
-
     // Inicializar scroll reveal
     revealOnScroll();
     window.addEventListener('scroll', revealOnScroll);
 });
 
-// ============ FUNCIONES DE TABS ============
+// ============ FUNCIONES DE RESUMEN (HOME) ============
 
-function cambiarTab(tabName, btnElement) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    
-    const targetTab = document.getElementById(tabName);
-    if (targetTab) {
-        targetTab.classList.add('active');
-        btnElement.classList.add('active');
-        
-        // Animación de entrada
-        targetTab.style.opacity = '0';
-        targetTab.style.transform = 'translateY(10px)';
-        setTimeout(() => {
-            targetTab.style.transition = 'all 0.4s ease';
-            targetTab.style.opacity = '1';
-            targetTab.style.transform = 'translateY(0)';
-        }, 10);
-    }
+function actualizarResumenHome() {
+    // Obtener cantidad de aparatos
+    fetch('/api/aparatos')
+        .then(r => r.json())
+        .then(aparatos => {
+            const el = document.getElementById('summary-aparatos');
+            if (el) el.textContent = aparatos.length;
+        });
+
+    // Obtener consumo total
+    fetch('/api/consumo')
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById('summary-consumo');
+            if (el) el.textContent = data.total_mensual_kwh.toFixed(1);
+        })
+        .catch(() => {
+            const el = document.getElementById('summary-consumo');
+            if (el) el.textContent = "0.0";
+        });
 }
 
 // ============ FUNCIONES DE APARATOS ============
@@ -62,6 +49,7 @@ function cargarAparatos() {
 
 function renderizarAparatos(aparatos) {
     const contenedor = document.getElementById('lista-aparatos');
+    if (!contenedor) return;
     
     if (aparatos.length === 0) {
         contenedor.innerHTML = `
@@ -113,11 +101,7 @@ function agregarAparato() {
     fetch('/api/aparatos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            nombre: nombre,
-            potencia_w: potencia,
-            horas_dia: horas
-        })
+        body: JSON.stringify({ nombre, potencia_w: potencia, horas_dia: horas })
     })
     .then(r => r.json())
     .then(data => {
@@ -143,8 +127,8 @@ function eliminarAparato(id) {
 }
 
 function editarAparato(id) {
-    const item = document.querySelectorAll('.aparato-item')[id];
-    const nombreActual = item.querySelector('.aparato-nombre').textContent;
+    const items = document.querySelectorAll('.aparato-item');
+    const nombreActual = items[id].querySelector('.aparato-nombre').textContent;
     
     const nombre = prompt('Nombre del aparato:', nombreActual);
     if (nombre === null) return;
@@ -165,7 +149,7 @@ function editarAparato(id) {
     fetch(`/api/aparatos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: nombre, potencia_w: potencia, horas_dia: horas })
+        body: JSON.stringify({ nombre, potencia_w: potencia, horas_dia: horas })
     })
     .then(r => r.json())
     .then(data => {
@@ -180,7 +164,10 @@ function cargarEjemplo() {
         .then(r => r.json())
         .then(data => {
             mostrarNotificacion('Datos de ejemplo cargados con éxito', 'success');
-            cargarAparatos();
+            // Recargar página si estamos en una sección que depende de datos
+            if (window.location.pathname === '/aparatos' || window.location.pathname === '/') {
+                location.reload();
+            }
         })
         .catch(e => mostrarNotificacion('Error al cargar ejemplo', 'error'));
 }
@@ -188,7 +175,9 @@ function cargarEjemplo() {
 // ============ FUNCIONES DE CONSUMO ============
 
 function calcularConsumo() {
-    const btn = document.querySelector('.action-bar .btn');
+    const btn = document.querySelector('.btn-large');
+    if (!btn) return;
+
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
     btn.disabled = true;
@@ -209,8 +198,8 @@ function calcularConsumo() {
 
 function renderizarConsumo(data) {
     const container = document.getElementById('consumo-results');
+    if (!container) return;
     container.style.display = 'block';
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
     document.getElementById('kpi-diario').textContent = data.total_diario_kwh.toFixed(2);
     document.getElementById('kpi-mensual').textContent = data.total_mensual_kwh.toFixed(2);
@@ -234,11 +223,10 @@ function renderizarConsumo(data) {
 
 function generarGrafico(aparatos) {
     const canvas = document.getElementById('grafico-consumo');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    if (graficoInstance) {
-        graficoInstance.destroy();
-    }
+    if (graficoInstance) graficoInstance.destroy();
     
     graficoInstance = new Chart(ctx, {
         type: 'bar',
@@ -249,7 +237,6 @@ function generarGrafico(aparatos) {
                 data: aparatos.map(a => a.kwh_mes),
                 backgroundColor: aparatos.map((_, i) => COLORS.chart[i % COLORS.chart.length]),
                 borderRadius: 6,
-                borderWidth: 0,
                 barThickness: 40
             }]
         },
@@ -257,24 +244,11 @@ function generarGrafico(aparatos) {
             responsive: true,
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    padding: 12,
-                    titleFont: { size: 14, family: 'Inter' },
-                    bodyFont: { size: 13, family: 'Inter' },
-                    cornerRadius: 8
-                }
+                tooltip: { backgroundColor: '#0f172a', padding: 12, cornerRadius: 8 }
             },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#f1f5f9' },
-                    ticks: { font: { family: 'Inter' } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { family: 'Inter', weight: '500' } }
-                }
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
             }
         }
     });
@@ -285,6 +259,7 @@ function cargarTopConsumidores() {
         .then(r => r.json())
         .then(top => {
             const topList = document.getElementById('top-list');
+            if (!topList) return;
             topList.innerHTML = top.map(item => `
                 <div class="top-item">
                     <span class="top-rank">${item.rank}</span>
@@ -308,9 +283,7 @@ function simularReduccion() {
     fetch('/api/simulacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            porcentaje_reduccion: parseFloat(porcentaje)
-        })
+        body: JSON.stringify({ porcentaje_reduccion: parseFloat(porcentaje) })
     })
     .then(r => r.json())
     .then(data => renderizarSimulacion(data))
@@ -319,16 +292,14 @@ function simularReduccion() {
 
 function renderizarSimulacion(data) {
     const container = document.getElementById('simulacion-results');
+    if (!container) return;
     container.style.display = 'block';
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
     document.getElementById('sim-original').textContent = data.consumo_original.toFixed(1);
     document.getElementById('sim-nuevo').textContent = data.consumo_nuevo.toFixed(1);
     document.getElementById('sim-ahorro-kwh').textContent = data.ahorro_kwh.toFixed(1);
     document.getElementById('sim-ahorro-dinero').textContent = '$' + data.ahorro_dinero.toLocaleString('es-CL', {maximumFractionDigits: 0});
     document.getElementById('sim-ahorro-porc').textContent = data.ahorro_porcentual.toFixed(1);
-    
-    mostrarNotificacion('Análisis de ahorro completado', 'success');
 }
 
 // ============ FUNCIONES DE RECOMENDACIONES ============
@@ -342,6 +313,7 @@ function cargarRecomendaciones() {
 
 function renderizarRecomendaciones(recomendaciones) {
     const contenedor = document.getElementById('recomendaciones-container');
+    if (!contenedor) return;
     
     contenedor.style.display = 'grid';
     contenedor.innerHTML = recomendaciones.map((rec, idx) => `
@@ -369,21 +341,16 @@ function renderizarRecomendaciones(recomendaciones) {
 // ============ FUNCIONES AUXILIARES ============
 
 function mostrarNotificacion(mensaje, tipo) {
-    tipo = tipo || 'success';
     const notif = document.getElementById('notification');
+    if (!notif) return;
     notif.textContent = mensaje;
-    notif.className = 'notification ' + tipo + ' show';
-    
-    setTimeout(() => {
-        notif.classList.remove('show');
-    }, 4000);
+    notif.className = 'notification ' + (tipo || 'success') + ' show';
+    setTimeout(() => notif.classList.remove('show'), 4000);
 }
 
 function revealOnScroll() {
-    const cards = document.querySelectorAll('.card');
-    cards.forEach(card => {
-        const cardTop = card.getBoundingClientRect().top;
-        if (cardTop < window.innerHeight - 100) {
+    document.querySelectorAll('.card').forEach(card => {
+        if (card.getBoundingClientRect().top < window.innerHeight - 50) {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
         }
@@ -393,13 +360,7 @@ function revealOnScroll() {
 // Estilos extra para animaciones via JS
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 `;
 document.head.appendChild(style);
