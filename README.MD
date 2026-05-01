@@ -1,49 +1,58 @@
-# Simulador de Consumo Energético
+# EcoWatts - Simulador de Consumo Energético Inteligente ⚡
 
-Proyecto desarrollado para la asignatura de Funciones y Matrices.
+**EcoWatts** es una plataforma web moderna diseñada para ayudar a los usuarios a visualizar, analizar y optimizar el consumo eléctrico de su hogar. A través de simulaciones precisas y análisis de datos, permite tomar decisiones informadas para reducir tanto el impacto ambiental como el costo de la factura eléctrica.
 
-## Descripción
-Aplicación web que permite simular y analizar el consumo energético de aparatos electrodomésticos en el hogar.
+## 🌟 Características Principales
 
-## Funcionalidades
-- Agregar, editar y eliminar aparatos eléctricos
-- Calcular consumo diario y mensual en kWh
-- Calcular costo mensual en pesos chilenos
-- Identificar los 3 aparatos con mayor consumo
-- Simular reducciones de consumo
-- Generar recomendaciones de ahorro
+- **Gestión de Aparatos:** CRUD completo para registrar dispositivos eléctricos con potencia (W) y horas de uso.
+- **Análisis en Tiempo Real:** Cálculos automáticos de consumo diario/mensual (kWh) y costos proyectados.
+- **Visualización Avanzada:** Gráficos interactivos con **Chart.js** para identificar los mayores consumidores.
+- **Sistema de Usuarios:** Autenticación segura (Registro/Login) con persistencia de datos individualizada.
+- **Simulación de Ahorro:** Herramienta predictiva para visualizar el impacto de reducir el uso en porcentajes específicos.
+- **Interfaz Premium:** Diseño moderno con tipografía *Space Grotesk*, efectos de *glassmorphism* y animaciones dinámicas.
 
-## Requisitos
-- Python 3.7 o superior
-- Flask 2.3.0
+## 🛠️ Stack Tecnológico
 
-## Instalación
+- **Backend:** Python + Flask
+- **Base de Datos:** PostgreSQL + Flask-SQLAlchemy
+- **Autenticación:** Flask-Login + Werkzeug Security
+- **Frontend:** HTML5, CSS3 (Vanilla), JavaScript (ES6+)
+- **Gráficos:** Chart.js
+- **Entorno:** python-dotenv para gestión de variables de entorno
 
-1. Clonar el repositoriobash
-git clone https://github.com/tu-usuario/simulador-energia.git
-cd simulador-energia
+## 🚀 Instalación y Configuración
 
-2. Instalar dependenciasbash
-pip install -r requirements.txt
+### 1. Requisitos Previos
+- Python 3.10 o superior
+- Servidor PostgreSQL activo
 
-3. Ejecutar la aplicaciónbash
-python app.py
+### 2. Clonar y Preparar el Entorno
+```bash
+git clone https://github.com/OsvaDev-HUB/Simulador-de-consumo-energetico-eficiente.git
+cd Simulador-de-consumo-energetico-eficiente
+```
 
-4. Abrir en el navegador
-http://127.0.0.1:5000
+### 3. Instalar Dependencias
+Se recomienda usar un entorno virtual:
+```bash
+py -m pip install flask flask-sqlalchemy psycopg2-binary flask-login python-dotenv
+```
 
-## Uso
-1. Agregar aparatos con su potencia en watts y horas de uso diario
-2. Calcular el consumo total
-3. Ver gráficos y estadísticas
-4. Simular reducciones de consumo
-5. Obtener recomendaciones de ahorro
+### 4. Configuración de Variables de Entorno
+Crea un archivo `.env` en la raíz del proyecto con el siguiente formato:
+```env
+SECRET_KEY=tu_llave_secreta_aqui
+DATABASE_URL=postgresql://usuario:password@localhost:5432/Eco_Watts
+```
 
-## Tecnologías utilizadas
-- Python
-- Flask (framework web)
-- HTML/CSS/JavaScript
-- Chart.js (gráficos)
+### 5. Ejecución
+```bash
+py app.py
+```
+Accede a `http://127.0.0.1:5000` en tu navegador.
 
-## Precio kWh
-El precio por kWh está configurado en 262 pesos chilenos (valor promedio 2024).
+## 📊 Configuración de Tarifas
+El sistema utiliza actualmente un valor promedio de **$262 CLP por kWh** (Chile, 2024), configurable dentro de la lógica del servidor.
+
+---
+Desarrollado con ❤️ por **OsvaDev-HUB** para la asignatura de Funciones y Matrices.
