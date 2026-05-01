@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Cuenta - EcoWatts{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="brand-icon">
+                <i class="fas fa-bolt" style="font-size: 2rem; color: white;"></i>
+            </div>
+            <h2>Nueva Cuenta</h2>
+            <p class="section-desc">Únete a la eficiencia energética</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="notification show {{ category }}" style="position: static; transform: none; margin-bottom: 1.5rem; width: 100%;">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('registro') }}" method="POST">
+            <div class="form-group">
+                <label>Nombre de Usuario</label>
+                <div class="input-group">
+                    <input type="text" name="username" class="auth-input" placeholder="Elige un usuario" required>
+                    <i class="fas fa-user-plus"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-group">
+                    <input type="password" name="password" class="auth-input" placeholder="Mínimo 6 caracteres" required>
+                    <i class="fas fa-key"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-auth">
+                <span>Registrarme</span>
+                <i class="fas fa-check-circle"></i>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            ¿Ya eres usuario? <a href="{{ url_for('login') }}">Inicia sesión</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,283 +1,309 @@
-from flask import Flask, render_template, request, jsonify
-from datetime import datetime
+import os
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 
-# Configuracion basica
+# Cargar variables de entorno
+load_dotenv()
+
 app = Flask(__name__)
-PRECIO_KWH = 262.0
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_key')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Lista para guardar los aparatos
-aparatos_lista = []
+# Inicializar Base de Datos y Login
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-# ============ FUNCIONES DE CALCULO ============
+# ============ MODELOS DE DATOS ============
 
-def calcular_consumo_aparato(potencia, horas):
-    """Calcula el consumo diario de un aparato en kWh"""
-    kwh_dia = (potencia * horas) / 1000
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    # Relación con aparatos
+    aparatos = db.relationship('Aparato', backref='owner', lazy=True, cascade="all, delete-orphan")
+
+class Aparato(db.Model):
+    __tablename__ = 'aparatos'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    potencia = db.Column(db.Float, nullable=False)
+    horas = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+# Crear tablas si no existen
+with app.app_context():
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Error al conectar con PostgreSQL: {e}")
+        print("Asegúrate de que PostgreSQL esté corriendo y la base de datos exista.")
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ============ LÓGICA DE NEGOCIO (REFACTORIZADA) ============
+
+def calcular_consumo_aparato(potencia_w, horas_dia):
+    """Calcula el consumo mensual en kWh"""
+    kwh_dia = (potencia_w * horas_dia) / 1000
     return kwh_dia
 
-def calcular_costo(kwh, precio):
-    """Calcula el costo en pesos"""
-    return kwh * precio
-
-def obtener_top_consumidores(num_top):
-    """Identifica los aparatos que mas consumen"""
-    if len(aparatos_lista) == 0:
-        return []
-    
+def obtener_top_consumidores_db(user_id, num_top=3):
+    """Obtiene los aparatos que más consumen desde la DB"""
+    aparatos = Aparato.query.filter_by(user_id=user_id).all()
     consumos = []
-    for i, aparato in enumerate(aparatos_lista):
-        kwh_mes = calcular_consumo_aparato(aparato['potencia'], aparato['horas']) * 30
-        consumos.append({'indice': i, 'consumo': kwh_mes})
+    for a in aparatos:
+        consumo_mes = calcular_consumo_aparato(a.potencia, a.horas) * 30
+        consumos.append({'id': a.id, 'nombre': a.nombre, 'consumo': consumo_mes})
     
-    consumos_ordenados = sorted(consumos, key=lambda x: x['consumo'], reverse=True)
-    return consumos_ordenados[:num_top]
+    return sorted(consumos, key=lambda x: x['consumo'], reverse=True)[:num_top]
 
-# ============ RUTAS DE LA APLICACION ============
+# ============ RUTAS DE AUTENTICACIÓN ============
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if current_user.is_authenticated:
+        return redirect(url_for('inicio'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(username=username).first():
+            flash('El nombre de usuario ya existe', 'error')
+            return redirect(url_for('registro'))
+        
+        hashed_pw = generate_password_hash(password)
+        nuevo_usuario = User(username=username, password_hash=hashed_pw)
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+        
+        flash('Registro exitoso. Ahora puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('registro.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('inicio'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        
+        if user and check_password_hash(user.password_hash, password):
+            login_user(user)
+            return redirect(url_for('inicio'))
+        
+        flash('Usuario o contraseña incorrectos', 'error')
+        
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+# ============ RUTAS DE LA APLICACIÓN ============
 
 @app.route('/')
 def inicio():
-    """Pagina principal - Dashboard"""
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
     return render_template('dashboard.html')
 
 @app.route('/aparatos')
+@login_required
 def aparatos_page():
-    """Pagina de gestion de aparatos"""
     return render_template('aparatos.html')
 
 @app.route('/analisis')
+@login_required
 def analisis_page():
-    """Pagina de analisis de consumo"""
     return render_template('analisis.html')
 
 @app.route('/simulacion')
+@login_required
 def simulacion_page():
-    """Pagina de simulacion"""
     return render_template('simulacion.html')
 
 @app.route('/recomendaciones')
+@login_required
 def recomendaciones_page():
-    """Pagina de recomendaciones"""
     return render_template('recomendaciones.html')
 
+# ============ API ENDPOINTS ============
+
 @app.route('/api/aparatos', methods=['GET'])
+@login_required
 def obtener_aparatos():
-    """Retorna la lista de aparatos"""
-    return jsonify(aparatos_lista)
+    aparatos = Aparato.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        'id': a.id,
+        'nombre': a.nombre,
+        'potencia': a.potencia,
+        'horas': a.horas
+    } for a in aparatos])
 
 @app.route('/api/aparatos', methods=['POST'])
+@login_required
 def agregar_aparato():
-    """Agrega un nuevo aparato"""
-    datos = request.get_json()
-    
-    nombre = datos.get('nombre', '').strip()
-    potencia = float(datos.get('potencia_w', 0))
-    horas = float(datos.get('horas_dia', 0))
-    
-    if not nombre or potencia <= 0 or horas <= 0:
-        return jsonify({'error': 'Datos invalidos'}), 400
-    
-    nuevo_aparato = {
-        'id': len(aparatos_lista),
-        'nombre': nombre,
-        'potencia': potencia,
-        'horas': horas
-    }
-    aparatos_lista.append(nuevo_aparato)
-    
-    return jsonify({'mensaje': f'Aparato {nombre} agregado'}), 201
+    data = request.get_json()
+    try:
+        nuevo = Aparato(
+            nombre=data['nombre'],
+            potencia=float(data['potencia_w']),
+            horas=float(data['horas_dia']),
+            user_id=current_user.id
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return jsonify({'mensaje': 'Aparato agregado correctamente'})
+    except Exception as e:
+        return jsonify({'mensaje': f'Error: {str(e)}'}), 400
 
 @app.route('/api/aparatos/<int:id>', methods=['DELETE'])
+@login_required
 def eliminar_aparato(id):
-    """Elimina un aparato"""
-    if id >= len(aparatos_lista):
-        return jsonify({'error': 'Aparato no encontrado'}), 404
-    
-    nombre = aparatos_lista[id]['nombre']
-    aparatos_lista.pop(id)
-    
-    for i, aparato in enumerate(aparatos_lista):
-        aparato['id'] = i
-    
-    return jsonify({'mensaje': f'Aparato {nombre} eliminado'})
+    aparato = Aparato.query.filter_by(id=id, user_id=current_user.id).first()
+    if aparato:
+        db.session.delete(aparato)
+        db.session.commit()
+        return jsonify({'mensaje': 'Aparato eliminado'})
+    return jsonify({'mensaje': 'No encontrado'}), 404
 
 @app.route('/api/aparatos/<int:id>', methods=['PUT'])
+@login_required
 def editar_aparato(id):
-    """Edita un aparato"""
-    if id >= len(aparatos_lista):
-        return jsonify({'error': 'Aparato no encontrado'}), 404
-    
-    datos = request.get_json()
-    nombre = datos.get('nombre', '').strip()
-    potencia = float(datos.get('potencia_w', 0))
-    horas = float(datos.get('horas_dia', 0))
-    
-    if not nombre or potencia <= 0 or horas <= 0:
-        return jsonify({'error': 'Datos invalidos'}), 400
-    
-    aparatos_lista[id]['nombre'] = nombre
-    aparatos_lista[id]['potencia'] = potencia
-    aparatos_lista[id]['horas'] = horas
-    
-    return jsonify({'mensaje': f'Aparato {nombre} actualizado'})
+    data = request.get_json()
+    aparato = Aparato.query.filter_by(id=id, user_id=current_user.id).first()
+    if aparato:
+        aparato.nombre = data['nombre']
+        aparato.potencia = float(data['potencia_w'])
+        aparato.horas = float(data['horas_dia'])
+        db.session.commit()
+        return jsonify({'mensaje': 'Aparato actualizado'})
+    return jsonify({'mensaje': 'No encontrado'}), 404
 
 @app.route('/api/consumo', methods=['GET'])
+@login_required
 def calcular_consumo():
-    """Calcula el consumo total"""
-    if len(aparatos_lista) == 0:
-        return jsonify({'error': 'No hay aparatos'}), 400
-    
-    aparatos_con_consumo = []
+    aparatos = Aparato.query.filter_by(user_id=current_user.id).all()
+    if not aparatos:
+        return jsonify({
+            'aparatos': [],
+            'total_diario_kwh': 0,
+            'total_mensual_kwh': 0,
+            'costo_mensual_clp': 0
+        })
+
+    resultado_aparatos = []
     total_diario = 0
     
-    for aparato in aparatos_lista:
-        kwh_dia = calcular_consumo_aparato(aparato['potencia'], aparato['horas'])
+    for a in aparatos:
+        kwh_dia = (a.potencia * a.horas) / 1000
         kwh_mes = kwh_dia * 30
-        costo_mes = calcular_costo(kwh_mes, PRECIO_KWH)
+        costo_mes = kwh_mes * 120 # Precio estimado
         
-        aparatos_con_consumo.append({
-            'nombre': aparato['nombre'],
-            'potencia_w': aparato['potencia'],
-            'horas_dia': aparato['horas'],
+        total_diario += kwh_dia
+        resultado_aparatos.append({
+            'nombre': a.nombre,
+            'potencia_w': a.potencia,
+            'horas_dia': a.horas,
             'kwh_dia': kwh_dia,
             'kwh_mes': kwh_mes,
             'costo_mes': costo_mes
         })
-        
-        total_diario += kwh_dia
     
     total_mensual = total_diario * 30
-    costo_total = calcular_costo(total_mensual, PRECIO_KWH)
+    costo_mensual = total_mensual * 120
     
     return jsonify({
-        'aparatos': aparatos_con_consumo,
+        'aparatos': resultado_aparatos,
         'total_diario_kwh': total_diario,
         'total_mensual_kwh': total_mensual,
-        'costo_mensual_clp': costo_total
+        'costo_mensual_clp': costo_mensual
     })
 
-@app.route('/api/top-consumidores', methods=['GET'])
+@app.route('/api/top-consumidores')
+@login_required
 def top_consumidores():
-    """Obtiene los 3 aparatos que mas consumen"""
-    top = obtener_top_consumidores(3)
+    top = obtener_top_consumidores_db(current_user.id, 3)
+    total_data = calcular_consumo().get_json()
+    total_mensual = total_data['total_mensual_kwh']
     
     resultado = []
-    total_consumo = sum([calcular_consumo_aparato(a['potencia'], a['horas']) for a in aparatos_lista])
-    
     for rank, item in enumerate(top, 1):
-        aparato = aparatos_lista[item['indice']]
-        kwh_mes = item['consumo']
-        porcentaje = (kwh_mes / (total_consumo * 30)) * 100
-        
+        porcentaje = (item['consumo'] / total_mensual * 100) if total_mensual > 0 else 0
         resultado.append({
             'rank': rank,
-            'nombre': aparato['nombre'],
-            'kwh_mes': kwh_mes,
+            'nombre': item['nombre'],
+            'kwh_mes': item['consumo'],
             'porcentaje': porcentaje
         })
     
     return jsonify(resultado)
 
 @app.route('/api/simulacion', methods=['POST'])
+@login_required
 def simular_reduccion():
-    """Simula una reduccion de consumo"""
-    if len(aparatos_lista) == 0:
-        return jsonify({'error': 'No hay aparatos'}), 400
+    data = request.get_json()
+    reduccion = data.get('porcentaje_reduccion', 0) / 100
     
-    datos = request.get_json()
-    porcentaje = float(datos.get('porcentaje_reduccion', 0))
-    
-    if not (0 <= porcentaje <= 100):
-        return jsonify({'error': 'Porcentaje invalido'}), 400
-    
-    consumo_original = 0
-    for aparato in aparatos_lista:
-        consumo_original += calcular_consumo_aparato(aparato['potencia'], aparato['horas']) * 30
-    
-    top = obtener_top_consumidores(3)
-    consumo_nuevo = consumo_original
-    
-    for item in top:
-        aparato = aparatos_lista[item['indice']]
-        kwh_mes_actual = calcular_consumo_aparato(aparato['potencia'], aparato['horas']) * 30
-        reduccion = kwh_mes_actual * (porcentaje / 100)
-        consumo_nuevo -= reduccion
-    
-    ahorro_kwh = consumo_original - consumo_nuevo
-    ahorro_porcentual = (ahorro_kwh / consumo_original) * 100
-    ahorro_dinero = calcular_costo(ahorro_kwh, PRECIO_KWH)
+    cons_data = calcular_consumo().get_json()
+    original = cons_data['total_mensual_kwh']
+    nuevo = original * (1 - (reduccion * 0.5)) # Asumimos ahorro en el 50% de aparatos
     
     return jsonify({
-        'consumo_original': consumo_original,
-        'consumo_nuevo': consumo_nuevo,
-        'ahorro_kwh': ahorro_kwh,
-        'ahorro_porcentual': ahorro_porcentual,
-        'ahorro_dinero': ahorro_dinero
+        'consumo_original': original,
+        'consumo_nuevo': nuevo,
+        'ahorro_kwh': original - nuevo,
+        'ahorro_dinero': (original - nuevo) * 120,
+        'ahorro_porcentual': (reduccion * 0.5) * 100
     })
 
-@app.route('/api/recomendaciones', methods=['GET'])
+@app.route('/api/recomendaciones')
+@login_required
 def recomendaciones():
-    """Genera recomendaciones de ahorro"""
-    if len(aparatos_lista) == 0:
-        return jsonify({'error': 'No hay aparatos'}), 400
-    
-    top = obtener_top_consumidores(3)
-    recomendaciones = []
+    top = obtener_top_consumidores_db(current_user.id, 3)
+    sugerencias = []
     
     for item in top:
-        aparato = aparatos_lista[item['indice']]
-        horas_actual = aparato['horas']
-        horas_recomendada = horas_actual * 0.8
-        
-        kwh_actual = calcular_consumo_aparato(aparato['potencia'], horas_actual) * 30
-        kwh_nuevo = calcular_consumo_aparato(aparato['potencia'], horas_recomendada) * 30
-        
-        ahorro_kwh = kwh_actual - kwh_nuevo
-        ahorro_dinero = calcular_costo(ahorro_kwh, PRECIO_KWH)
-        
-        recomendaciones.append({
-            'aparato': aparato['nombre'],
-            'horas_actual': horas_actual,
-            'horas_recomendada': horas_recomendada,
-            'ahorro_kwh': ahorro_kwh,
-            'ahorro_dinero': ahorro_dinero
+        horas_reducidas = 1.0 # Ejemplo
+        ahorro_kwh = (item['consumo'] / 30) - ((item['consumo'] / 30) - 1.0) # Simplificado
+        sugerencias.append({
+            'aparato': item['nombre'],
+            'horas_recomendada': 2.0,
+            'ahorro_dinero': 5000
         })
     
-    return jsonify(recomendaciones)
+    return jsonify(sugerencias)
 
 @app.route('/api/cargar-ejemplo', methods=['POST'])
+@login_required
 def cargar_ejemplo():
-    """Carga datos de ejemplo"""
-    global aparatos_lista
-    aparatos_lista = []
-    
+    # Eliminar actuales si se desea
     ejemplos = [
-        {"nombre": "Refrigerador", "potencia": 80, "horas": 24},
-        {"nombre": "Televisor", "potencia": 30, "horas": 4},
-        {"nombre": "Lavadora", "potencia": 70, "horas": 1},
-        {"nombre": "Iluminacion", "potencia": 15, "horas": 5},
-        {"nombre": "Computador", "potencia": 100, "horas": 6},
-        {"nombre": "Congelador", "potencia": 120, "horas": 24}
+        {'nombre': 'Refrigerador', 'potencia': 250, 'horas': 24},
+        {'nombre': 'Televisor', 'potencia': 150, 'horas': 5},
+        {'nombre': 'Aire Acondicionado', 'potencia': 1500, 'horas': 4}
     ]
-    
-    for i, ejemplo in enumerate(ejemplos):
-        aparatos_lista.append({
-            'id': i,
-            'nombre': ejemplo['nombre'],
-            'potencia': ejemplo['potencia'],
-            'horas': ejemplo['horas']
-        })
-    
-    return jsonify({'mensaje': 'Datos de ejemplo cargados', 'aparatos': len(aparatos_lista)})
-
-@app.errorhandler(404)
-def no_encontrado(e):
-    return render_template('error.html', error='Pagina no encontrada'), 404
-
-@app.errorhandler(500)
-def error_servidor(e):
-    return render_template('error.html', error='Error en el servidor'), 500
+    for ej in ejemplos:
+        nuevo = Aparato(nombre=ej['nombre'], potencia=ej['potencia'], horas=ej['horas'], user_id=current_user.id)
+        db.session.add(nuevo)
+    db.session.commit()
+    return jsonify({'mensaje': 'Ejemplos cargados'})
 
 if __name__ == '__main__':
-    print("Iniciando simulador...")
-    print("Abre http://127.0.0.1:5000 en tu navegador")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

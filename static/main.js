@@ -9,10 +9,47 @@ const COLORS = {
 
 // Cuando carga la pagina
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar lluvia de rayos
+    iniciarLluviaRayos();
+    
     // Inicializar scroll reveal
     revealOnScroll();
     window.addEventListener('scroll', revealOnScroll);
 });
+
+// ============ FUNCIONES DE ANIMACIÓN (LLUVIA) ============
+
+function iniciarLluviaRayos() {
+    const container = document.getElementById('bolt-rain');
+    if (!container) return;
+
+    // Crear un rayo cada 100ms para una lluvia mucho más intensa
+    setInterval(() => {
+        const bolt = document.createElement('i');
+        bolt.className = 'fas fa-bolt falling-bolt';
+        
+        // Posición horizontal aleatoria
+        const posX = Math.random() * 100;
+        // Tamaño aleatorio sutil
+        const size = 0.5 + Math.random() * 1.5;
+        // Duración aleatoria para que no caigan todos igual
+        const duration = 3 + Math.random() * 4;
+        // Delay aleatorio
+        const delay = Math.random() * 2;
+
+        bolt.style.left = posX + 'vw';
+        bolt.style.fontSize = size + 'rem';
+        bolt.style.animationDuration = duration + 's';
+        bolt.style.animationDelay = '-' + delay + 's';
+
+        container.appendChild(bolt);
+
+        // Limpiar el elemento después de que termine la animación (8s max)
+        setTimeout(() => {
+            bolt.remove();
+        }, 8000);
+    }, 400);
+}
 
 // ============ FUNCIONES DE RESUMEN (HOME) ============
 
